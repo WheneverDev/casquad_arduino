@@ -40,4 +40,31 @@ void setup() {
 }
 
 void loop() {
+	if (write_adr) {
+		Serial.print("Adresse : ");
+		Serial.println(BLE.address());
+	}
+	BLEDevice central = BLE.central();
+	if (central) {
+		Serial.print("Connected to central : ");
+		Serial.println(central.address());
+		while (central.connected()) {
+				if (ChannelChar.written()) {
+						Serial.println("Channel char written");
+						int c = ChannelChar.value();
+						if ((c>=0)&&(c<=8)) {
+							Serial.println(c);
+							channel = A0+c;
+						}
+				}
+				int x = analogRead(channel);
+				uint8_t a[2];
+				a[0] = (x >> 8) & 0xFF;
+				a[1] = x & 0xFF;
+				AnalogChar.writeValue(a,2);
+				delay(1000);
+		}
+		Serial.print("Disconnected from central: ");
+		Serial.println(central.address());
+	}
 }
