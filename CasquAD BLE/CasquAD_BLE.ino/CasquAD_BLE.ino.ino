@@ -1,8 +1,5 @@
-#include <ArduinoBLE.h>
+#include <ArduinoBLE.h> 
 
-#define SERVICE_UUID "ee04e839-6709-4f42-af61-3e66c48918b3"
-#define ANALOG_CHARACT_UUID "7f32c0f0-67bf-47f4-bf28-15d413fa7b00"
-#define CHANNEL_CHARACT_UUID "b15bde96-d6ac-408c-8f85-1ee20201067c"
 #define PIN_LED 2
 
 #define SERVICE_UUID "ee04e830-6709-4f42-af61-3e66c48918b3"
@@ -23,7 +20,8 @@ void setup() {
 	Serial.begin(115200);
 	analogReadResolution(12);
 	channel = A0;
-	
+	pinMode(PIN_LED, OUTPUT);
+
 	Serial.println("Starting Casqu'AD firmware...");
 	if (!BLE.begin()) {
 		Serial.println("Starting BLE failed!");
@@ -53,23 +51,36 @@ void loop() {
 	if (central) {
 		Serial.print("Connected to central : ");
 		Serial.println(central.address());
+
 		while (central.connected()) {
+
 				if (ChannelChar.written()) {
 						Serial.println("Channel char written");
 						int c = ChannelChar.value();
+
 						if ((c>=0)&&(c<=8)) {
 							Serial.println(c);
+
+							if(c == 4){
+								digitalWrite(PIN_LED, HIGH);
+								Serial.println("LED");
+							}
+
 							channel = A0+c;
 						}
 				}
 				int x = analogRead(channel);
+
 				uint8_t a[2];
 				a[0] = (x >> 8) & 0xFF;
 				a[1] = x & 0xFF;
 				AnalogChar.writeValue(a,2);
+
 				delay(1000);
 		}
+
 		Serial.print("Disconnected from central: ");
 		Serial.println(central.address());
+		
 	}
 }
