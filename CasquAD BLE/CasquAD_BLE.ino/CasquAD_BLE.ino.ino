@@ -1,6 +1,7 @@
 #include <ArduinoBLE.h> 
 
 #define PIN_LED 2
+#define PIN_BUTTON 4
 
 #define SERVICE_UUID "ee04e830-6709-4f42-af61-3e66c48918b3"
 #define ANALOG_CHARACT_UUID "ee04e831-6709-4f42-af61-3e66c48918b3"
@@ -15,12 +16,14 @@ BLEDescriptor ChannelDescriptor("2901","channel");
 
 uint8_t channel;
 boolean write_adr;
+int lastButtonStatus;
 
 void setup() {
 	Serial.begin(115200);
 	analogReadResolution(12);
 	channel = A0;
 	pinMode(PIN_LED, OUTPUT);
+	pinMode(PIN_BUTTON, INPUT_PULLUP);
 
 	Serial.println("Starting Casqu'AD firmware...");
 	if (!BLE.begin()) {
@@ -43,6 +46,15 @@ void setup() {
 }
 
 void loop() {
+
+	int button = digitalRead(PIN_BUTTON);
+	
+	if (lastButtonStatus != button) {
+		Serial.println("Button push!");
+	}
+
+	lastButtonStatus = button;
+
 	if (write_adr) {
 		Serial.print("Adresse : ");
 		Serial.println(BLE.address());
