@@ -47,14 +47,6 @@ void setup() {
 
 void loop() {
 
-	int button = digitalRead(PIN_BUTTON);
-	
-	if (lastButtonStatus != button) {
-		Serial.println("Button push!");
-	}
-
-	lastButtonStatus = button;
-
 	if (write_adr) {
 		Serial.print("Adresse : ");
 		Serial.println(BLE.address());
@@ -65,6 +57,12 @@ void loop() {
 		Serial.println(central.address());
 
 		while (central.connected()) {
+
+        int button = digitalRead(PIN_BUTTON);
+        if (lastButtonStatus == 0 && button == 1) {
+          Serial.println("Button push!");
+        }
+        lastButtonStatus = button;
 
 				if (ChannelChar.written()) {
 						Serial.println("Channel char written");
