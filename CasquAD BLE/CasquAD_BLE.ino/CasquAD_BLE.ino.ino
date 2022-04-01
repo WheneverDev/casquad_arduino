@@ -14,14 +14,12 @@ BLEByteCharacteristic ChannelChar(CHANNEL_CHARACT_UUID, BLEWrite | BLEWrite);
 BLEDescriptor AnalogDescriptor("2901","analog");
 BLEDescriptor ChannelDescriptor("2901","channel");
 
-uint8_t channel;
 boolean write_adr;
 int lastButtonStatus;
 
 void setup() {
 	Serial.begin(115200);
 	analogReadResolution(12);
-	channel = A0;
 	pinMode(PIN_LED, OUTPUT);
 	pinMode(PIN_BUTTON, INPUT_PULLUP);
 
@@ -58,7 +56,7 @@ void loop() {
 
 		while (central.connected()) {
 
-        int button = digitalRead(PIN_BUTTON);
+        uint16_t button = digitalRead(PIN_BUTTON);
         if (lastButtonStatus == 0 && button == 1) {
           Serial.println("Button push!");
         }
@@ -75,16 +73,10 @@ void loop() {
 								digitalWrite(PIN_LED, HIGH);
 								Serial.println("LED");
 							}
-
-							channel = A0+c;
 						}
 				}
-				int x = analogRead(channel);
-
-				uint8_t a[2];
-				a[0] = (x >> 8) & 0xFF;
-				a[1] = x & 0xFF;
-				AnalogChar.writeValue(a,2);
+				
+				AnalogChar.writeValue(button);
 
 				delay(1000);
 		}
