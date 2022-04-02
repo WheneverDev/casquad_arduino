@@ -45,25 +45,25 @@ void loop() {
 		Serial.println(central.address());
 
 		while (central.connected()) {
-        uint16_t button = digitalRead(PIN_BUTTON);
-        if (lastButtonStatus == 0 && button == 1) {
-          Serial.println("Button push!");
-        }
-        lastButtonStatus = button;
 
-				if (ChannelChar.written()) {
-					Serial.println("Channel char written");
-					int c = ChannelChar.value();
-					if(c == 4){
-						digitalWrite(PIN_LED, !digitalRead(PIN_LED));
-						Serial.println("LED");
-					}
+			if (ChannelChar.written()) {
+				Serial.println("Channel char written");
+				int c = ChannelChar.value();
+				if(c == 4){
+					digitalWrite(PIN_LED, !digitalRead(PIN_LED));
+					Serial.println("LED");
 				}
-				
-				AnalogChar.writeValue(button);
+			}
+			
+			uint16_t button = digitalRead(PIN_BUTTON);
+			if (lastButtonStatus == 0 && button == 1) {
+				Serial.println("Button push!");
+			}
+			lastButtonStatus = button;
+			AnalogChar.writeValue(button);
 
-				delay(250);
-		}
+			delay(250);
+		}	
 
 		Serial.print("Disconnected from central: ");
 		Serial.println(central.address());
