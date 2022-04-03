@@ -1,14 +1,13 @@
 #include <ArduinoBLE.h> 
 #include "config.h"
+uint16_t lastButtonStatus;
 
-int lastButtonStatus;
+BLEService ArduinoService(SERVICE_UUID);
+BLECharacteristic DateSender(ANALOG_CHARACT_UUID, BLERead | BLENotify, 2);
+BLEByteCharacteristic DataReceiver(CHANNEL_CHARACT_UUID, BLEWrite | BLEWrite);
 
-BLEService AnalogService(SERVICE_UUID);
-BLECharacteristic AnalogChar(ANALOG_CHARACT_UUID, BLERead | BLENotify, 2);
-BLEByteCharacteristic ChannelChar(CHANNEL_CHARACT_UUID, BLEWrite | BLEWrite);
-
-BLEDescriptor AnalogDescriptor("2901","analog");
-BLEDescriptor ChannelDescriptor("2901","channel");
+BLEDescriptor SenderDescriptor("2901","analog");
+BLEDescriptor ReceiverDescriptor("2901","channel");
 
 void setup() {
 	Serial.begin(115200);
@@ -23,16 +22,16 @@ void setup() {
 		while (1);
 	}
 
-	AnalogChar.addDescriptor(AnalogDescriptor);
-	ChannelChar.addDescriptor(ChannelDescriptor);
+	DateSender.addDescriptor(SenderDescriptor);
+	DataReceiver.addDescriptor(ReceiverDescriptor);
 
 	BLE.setLocalName("CASQU'AD");
-	BLE.setAdvertisedService(AnalogService);
+	BLE.setAdvertisedService(ArduinoService);
 	
-	AnalogService.addCharacteristic(AnalogChar);
-	AnalogService.addCharacteristic(ChannelChar);
+	ArduinoService.addCharacteristic(DateSender);
+	ArduinoService.addCharacteristic(DataReceiver);
 	
-	BLE.addService(AnalogService);
+	BLE.addService(ArduinoService);
 	BLE.advertise();
 
 }
@@ -41,14 +40,14 @@ void loop() {
 
 	BLEDevice central = BLE.central();
 	if (central) {
-		Serial.print("Connected to central : ");
+		Serial.print("Connected to device : ");
 		Serial.println(central.address());
 
 		while (central.connected()) {
 
-			if (ChannelChar.written()) {
+			if (DataReceiver.written()) {
 				Serial.println("Channel char written");
-				int c = ChannelChar.value();
+				int c = DataReceiver.value();
 				if(c == 4){
 					digitalWrite(PIN_LED, !digitalRead(PIN_LED));
 					Serial.println("LED");
@@ -56,16 +55,16 @@ void loop() {
 			}
 			
 			uint16_t button = digitalRead(PIN_BUTTON);
-			if (lastButtonStatus == 0 && button == 1) {
+			if (lastButtonStatus == 1 && button == 0) {
 				Serial.println("Button push!");
+				DateSender.writeValue(button);
 			}
 			lastButtonStatus = button;
-			AnalogChar.writeValue(button);
 
 			delay(250);
 		}	
 
-		Serial.print("Disconnected from central: ");
+		Serial.print("Disconnected from device: ");
 		Serial.println(central.address());
 		
 	}
