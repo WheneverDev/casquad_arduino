@@ -8,3 +8,13 @@ void sendData(BLECharacteristic chara, uint16_t value) {
     Serial.print(value);
     Serial.println(" sent.");
 }
+
+int tryReceivingData(BLEByteCharacteristic chara) {
+    
+    if(chara.written()) {
+        Serial.println("Data receice");
+        int value = chara.value();
+        return value;
+    }
+
+}
