@@ -1,5 +1,7 @@
 #include <ArduinoBLE.h> 
 #include "config.h"
+#include "function.h"
+
 uint16_t lastButtonStatus;
 
 BLEService ArduinoService(SERVICE_UUID);
