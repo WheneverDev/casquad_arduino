@@ -1,20 +1,27 @@
 #include <ArduinoBLE.h> 
-#include "config.h"
-#include "function.h"
 
-uint16_t lastButtonStatus;
+#define PIN_LED 2
+#define PIN_BUTTON 4
 
-BLEService ArduinoService(SERVICE_UUID);
-BLECharacteristic DateSender(ANALOG_CHARACT_UUID, BLERead | BLENotify, 2);
-BLEByteCharacteristic DataReceiver(CHANNEL_CHARACT_UUID, BLEWrite | BLEWrite);
+#define SERVICE_UUID "ee04e830-6709-4f42-af61-3e66c48918b3"
+#define ANALOG_CHARACT_UUID "ee04e831-6709-4f42-af61-3e66c48918b3"
+#define CHANNEL_CHARACT_UUID "ee04e832-6709-4f42-af61-3e66c48918b3"
 
-BLEDescriptor SenderDescriptor("2901","analog");
-BLEDescriptor ReceiverDescriptor("2901","channel");
+BLEService AnalogService(SERVICE_UUID);
+BLECharacteristic AnalogChar(ANALOG_CHARACT_UUID, BLERead | BLENotify, 2);
+BLEByteCharacteristic ChannelChar(CHANNEL_CHARACT_UUID, BLEWrite | BLEWrite);
+
+BLEDescriptor AnalogDescriptor("2901","analog");
+BLEDescriptor ChannelDescriptor("2901","channel");
+
+uint8_t channel;
+boolean write_adr;
+int lastButtonStatus;
 
 void setup() {
 	Serial.begin(115200);
 	analogReadResolution(12);
-
+	channel = A0;
 	pinMode(PIN_LED, OUTPUT);
 	pinMode(PIN_BUTTON, INPUT_PULLUP);
 
@@ -24,49 +31,65 @@ void setup() {
 		while (1);
 	}
 
-	DateSender.addDescriptor(SenderDescriptor);
-	DataReceiver.addDescriptor(ReceiverDescriptor);
+	AnalogChar.addDescriptor(AnalogDescriptor);
+	ChannelChar.addDescriptor(ChannelDescriptor);
 
 	BLE.setLocalName("CASQU'AD");
-	BLE.setAdvertisedService(ArduinoService);
+	BLE.setAdvertisedService(AnalogService);
 	
-	ArduinoService.addCharacteristic(DateSender);
-	ArduinoService.addCharacteristic(DataReceiver);
+	AnalogService.addCharacteristic(AnalogChar);
+	AnalogService.addCharacteristic(ChannelChar);
 	
-	BLE.addService(ArduinoService);
+	BLE.addService(AnalogService);
 	BLE.advertise();
 
 }
 
 void loop() {
 
+	if (write_adr) {
+		Serial.print("Adresse : ");
+		Serial.println(BLE.address());
+	}
 	BLEDevice central = BLE.central();
 	if (central) {
-		Serial.print("Connected to device : ");
+		Serial.print("Connected to central : ");
 		Serial.println(central.address());
 
 		while (central.connected()) {
 
-			if (DataReceiver.written()) {
-				Serial.println("Channel char written");
-				int c = DataReceiver.value();
-				if(c == 4){
-					digitalWrite(PIN_LED, !digitalRead(PIN_LED));
-					Serial.println("LED");
+        int button = digitalRead(PIN_BUTTON);
+        if (lastButtonStatus == 0 && button == 1) {
+          Serial.println("Button push!");
+          
+          int x = analogRead(channel);
+          uint8_t a[2];
+          a[0] = (x >> 8) & 0xFF;
+          a[1] = x & 0xFF;
+          AnalogChar.writeValue(a,2);
+        }
+        lastButtonStatus = button;
+
+				if (ChannelChar.written()) {
+						Serial.println("Channel char written");
+						int c = ChannelChar.value();
+
+						if ((c>=0)&&(c<=8)) {
+							Serial.println(c);
+
+							if(c == 4){
+								digitalWrite(PIN_LED, HIGH);
+								Serial.println("LED");
+							}
+
+							channel = A0+c;
+						}
 				}
-			}
-			
-			uint16_t button = digitalRead(PIN_BUTTON);
-			if (lastButtonStatus == 1 && button == 0) {
-				Serial.println("Button push!");
-				DateSender.writeValue(button);
-			}
-			lastButtonStatus = button;
 
-			delay(250);
-		}	
+				delay(1000);
+		}
 
-		Serial.print("Disconnected from device: ");
+		Serial.print("Disconnected from central: ");
 		Serial.println(central.address());
 		
 	}
