@@ -1,6 +1,7 @@
 #include <Arduino_LSM9DS1.h>
 
-bool movget;
+bool movget = false;
+bool newMovementPossible = true;
 long int oldtime;
 
 float xg, yg, zg;
